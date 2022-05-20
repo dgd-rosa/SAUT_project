@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>path_bringup</name>
+  <version>1.0.0</version>
+  <description>TODO</description>
+
+  <author email="daniel.garcia.domingos.rosa@tecnico.ulisboa.pt">Daniel Rosa</author>
+	  
+  <maintainer email="daniel.garcia.domingos.rosa@tecnico.ulisboa.pt">Daniel Rosa</maintainer>
+
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
