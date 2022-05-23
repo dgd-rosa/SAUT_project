@@ -4,8 +4,10 @@ import rospy
 from dsor_msgs.msg import Measurement
 
 def callback (data):
-    print(data.value)
-    print("\n")
+    array = []
+    for value in data.value:
+        array.append(value)
+    print(array)
 
 if __name__ == '__main__':
     print("ola")
