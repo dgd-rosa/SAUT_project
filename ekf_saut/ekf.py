@@ -45,6 +45,9 @@ class EKF_simple(EKF):
         tmp_vect = np.full(shape=self.state_dimension, fill_value = (random.gauss(self.measurement_mean, self.process_variance))**2, dtype=np.float)
         return np.diag(tmp_vect)
 
+    def kalman_gain(self):
+        pass
+
     def predict(self, u, v, r, b, e, psi):
         # Compute the predicted state
         self.current_apriori_state[0] = self.current_state[0] + u*np.cos(psi) - v*np.sin(psi) + r*np.cos(-e)*np.cos(-b-psi)
@@ -53,8 +56,9 @@ class EKF_simple(EKF):
         # Compute the a priori error covariance estimate
         self.P_priori = self.A_matrix() * self.P_priori * np.transpose(self.A_matrix()) + self.Q_matrix()
 
+    #TODO: Ended my last work here in update function
     def update(self, x_beacon, y_beacon):
-        pass
+        kalman_gain = self.kalman_gain()
 
     # Beacon X and Y as input args, as these could be later dynamic... for now we consider the beacon as always in the same position
     def compute_iteration(self, x_beacon, y_beacon, u, v, r, b, e, psi):
