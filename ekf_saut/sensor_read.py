@@ -10,7 +10,6 @@ def callback (data):
     print(array)
 
 if __name__ == '__main__':
-    print("ola")
     rospy.init_node('custom_listener', anonymous=True)
     rospy.Subscriber("/mvector/measurement/orientation", Measurement, callback)
     rospy.spin()
