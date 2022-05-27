@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<launch>
+    
+    <!-- Parameters and Arguments -->
+    <arg name="name"            /> <!-- Name of the vehicle being launched -->   
+    <arg name="config_package_path"  /> <!-- Name of the package where the configuration files are stored -->
+    <arg name="folder"              default="simulation" />  <!-- Name of the folder for the configuration files -->     
+    <arg name="namespace"           default="false" />
+
+    <arg name="altimeter"           default="false" /> 
+    <arg name="bms"                 default="false" /> 
+    <arg name="depth_cell"          default="false" /> 
+    <arg name="dvl"                 default="false" />     
+    <arg name="gps"                 default="false" />      
+    <arg name="imu"                 default="false" />      
+    <arg name="ims"                 default="false" /> 
+    <arg name="mast_leds"           default="false" />
+    <arg name="optical_modem"       default="false" />
+    <arg name="thrusters"           default="false" />
+    
+    <group ns="drivers">
+
+        <!-- Load topics Params for all drivers-->
+        <arg name="dollar" value="$" />
+        <rosparam command="load" file="$(arg dollar)$(arg config_package_path))/config/dev_configs/drivers_hrov.yaml" />
+
+        <!-- Load drivers configs (ports, baudrate, ...) -->
+        <rosparam command="load" file="$(arg dollar)$(arg config_package_path))/config/dev_configs/drivers.yaml" />
+
+        <!-- #################################### -->
+        <!-- Driver nodes, only in real scenarios -->
+        <!-- #################################### -->
+        <!-- Altimeter-->
+        <group if="$(arg altimeter)">
+            <node pkg="isa500" type="isa500_node" name="altimeter" respawn="true" output="screen" />
+        </group>
+
+        <!-- Outside Pressure sensor - depth cell-->
+        <group if="$(arg depth_cell)">
+            <node pkg="isd4000_depth_cell" type="isd4000_depth_cell_node" name="depth_cell" respawn="true" output="screen" />
+        </group>
+
+        <!-- batteries-->
+        <group if="$(arg bms)">
+            <node pkg="takever_bms" type="takever_bms_node" name="bms" respawn="true" output="screen" />
+        </group>
+        
+        <!-- dvl-->
+        <group if="$(arg dvl)">
+            <node pkg="nortek_dvl500" type="nortek_dvl500_node" name="dvl" respawn="true" output="screen" />
+        </group>
+        
+        <!-- gps-->                 
+	    <group if="$(arg gps)">
+            <node pkg="ublox_gps" type="ublox_gps" name="gps" respawn="true" output="screen" />
+	    </group>
+        
+        <!-- imu/ahrs vectornav--> 
+        <group if="$(arg imu)">
+            <node pkg="vn100_imu" type="vn100_imu_node" name="imu" respawn="true" output="screen" />
+        </group>
+
+        <!-- Internal monitor System-->
+        <group if="$(arg ims)">
+            <node pkg="oceantech_ims" type="oceantech_ims_node" name="ims" respawn="true" output="screen" />
+	    </group>
+
+        <!-- Mast leds -->
+        <group if="$(arg mast_leds)">
+            <node pkg="oceantech_status_leds" type="oceantech_status_leds" name="mast_leds" respawn="true" output="screen" />
+        </group>
+            
+        <!-- VESC driver node -->
+        <group if="$(arg thrusters)">
+            <node pkg="vesc_driver" type="vesc_driver_node" name="thrusters" respawn="true" output="screen" />
+        </group>
+    </group>
+</launch>

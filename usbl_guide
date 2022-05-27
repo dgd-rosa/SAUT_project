@@ -1,0 +1,18 @@
+roslaunch bringup_saut start_scenario.launch
+
+roslaunch bringup_saut start_gz_medusa.launch 
+
+roslaunch oceantech_bringup start_ship.launch
+
+rosservice call /ship/manage_process "action: 1 name: 'acomms'" (activar a linha de comunicaçao entre o beacon e o usbl no barco)
+
+rosservice call /mvector/manage_process "action: 1 name: 'acomms'" (activar a linha de comunicaçao entre o beacon e o usbl no mvector)
+
+rostopic pub /USBL/enable_pinger std_msgs/Bool "data: true" (começar a mandar e receber cenas na linha de comunicaçao)
+
+rostopic echo /mvector/sensors/usbl_fix (topico onde se tem o bearing, elevation e range do beacon em relação ao mvector)
+
+
+
+
+
