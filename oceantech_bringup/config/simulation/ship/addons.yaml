@@ -1,3 +1,0 @@
-console_server:
-    PORT: 7080
-    ROOT_NAMESPACE: true

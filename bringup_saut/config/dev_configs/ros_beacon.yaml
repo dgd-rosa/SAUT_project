@@ -1,0 +1,351 @@
+## --------------------------- ## 
+#  medusa_addons                #
+## --------------------------- ## 
+addons/console_path_parser:
+    node_frequency: 5
+    topics:
+        subscribers: 
+            Mission_String: /beacon/addons/Mission_String
+            state: /beacon/nav/filter/state
+            flag: /beacon/Flag
+        publishers:
+            Path_Section: /beacon/addons/path_section
+            Formation: /beacon/addons/formation
+            biased_formation: /beacon/addons/biased_formation
+            WPRef: /beacon/addons/WPRef
+            DepthRef: /beacon/ref/depth
+            AltRef: /beacon/ref/altitude
+            FullMission: /beacon/addons/full_mission
+        services:
+            reset_path: "/beacon/ResetPath"
+            arc2d_path: "/beacon/SpawnArc2DPath"
+            line_path: "/beacon/SpawnLinePath"
+            pf_start: "/beacon/PFStart"
+            pf_stop: "/beacon/PFStop"
+            set_speed: "/beacon/SetConstVdVehicle"
+
+addons/console_server:
+    topics:
+      services:
+          wp_standard: "/beacon/controls/send_wp_standard"
+          wp_loose: "/beacon/controls/send_wp_loose"
+          wp_heading: "/beacon/controls/send_wp_heading"
+      console:
+          waypoint: "wp_standard"
+    
+addons/aggregator:
+    pub_rate: 2.0
+
+## --------------------------- ## 
+#  medusa_sim                   #
+## --------------------------- ## 
+## dynamic model
+sim/auv_sim:
+    frame_id: "beacon"
+    node_frequency: 100 # (Hz)
+    topics:
+        subscribers:
+            thrusters: "/beacon/thrusters/rpm_command"
+        publishers:
+            odometry: "/beacon/sim/dynamics/position"
+        services:
+            start_pause: "/beacon/sim/pause_start"
+
+## sensor simulator
+sim/sensors:
+    node_frequency: 10
+    topics:
+        subscribers: [ "/beacon/sim/dynamics/position"]
+        publishers : [
+            "/beacon/measurement/position",
+            "/beacon/measurement/velocity",
+            "/beacon/measurement/orientation",
+            "/beacon/sensors/gnss",
+            "/beacon/sensors/range",
+            "/beacon/sim/model/state",
+            "/beacon/diagnostics/thrusterStatus"
+        ]
+    services:
+      enable_dvl: "/beacon/sim/enable_dvl"
+      enable_altimeter: "/beacon/sim/enable_altimeter"
+
+## --------------------------- ## 
+#  medusa_nav                   #
+## --------------------------- ## 
+### Sensor beacon for the frame "odom"
+nav/filter:
+    node_frequency: 10      # ROS node rate
+    topics:
+        subscribers: [       # reset, position topic, velocity topic and orientation and acceleration (optional) topic
+            "/beacon/nav/reset", "/beacon/measurement/position", "/beacon/measurement/velocity", "/beacon/measurement/orientation"
+        ]
+        publishers: [        # state topic, debug topic
+            "/beacon/nav/filter/state", "/beacon/nav/filter/debug"
+        ]     
+    topics_dr:
+       velocity: "/beacon/measurement/velocity"
+       orientation: "/beacon/measurement/orientation"
+       true_state: "/beacon/nav/filter/state"
+       flag: "/beacon/Flag"
+       dead_reckoning: "/beacon/nav/filter/state_dr"
+       dead_reckoning_console: "/beacon/State_dr"
+    services_dr:
+       reset_filter_dr: "/beacon/nav/reset_filter_dr"
+
+### Converting sensor_msgs::NavSatFix to medusa_msgs::Measurement data type
+nav/gnss2utm:
+    node_frequency: 10
+    topics:
+        subscribers: [ "/beacon/sensors/gnss" ]
+        publishers: [ "/beacon/measurement/position" ]
+        ground_truth: "/beacon/State_gt"
+    services:
+        enable_gps: "/beacon/sensor/enable_gps"
+
+nav/usbl2pos:
+    node_frequency: 10
+    topics:
+        subscribers: [
+            "/beacon/sensors/usbl_fix", "/beacon/acomms/nav/filter/state", "/beacon/nav/filter/state"
+        ]
+        publishers: [ "/beacon/measurement/position", "/beacon/State_usbl_est", "/beacon/nav/filter/usbl_est" ]
+
+nav/range2pos:
+    node_frequency: 10
+    t_sync: 2
+    topics:
+        subscribers: [ "/beacon/sensors/range", "/beacon/nav/filter/state" ]
+        publishers: [ "/beacon/measurement/position" ]
+
+nav/auvstate2mstate:
+    node_frequency: 10
+    topics:
+        subscribers: [ "/beacon/nav/filter/state", "/beacon/drivers/inside_pressure/data", "/beacon/sensors/gnss" ]
+        publishers:  [ "/beacon/State" ]
+
+## --------------------------- ## 
+#  medusa_control               #
+## --------------------------- ## 
+
+### Static Thruster Allocation
+controls/static_thruster_allocation:
+    topics:
+        subscribers:
+            thrust_body_request: "/beacon/thrust_body_request"
+        publishers:
+            thrusters: "/beacon/thrusters/rpm_command"
+
+### Inner Loops PID
+controls/inner_loops_pid:
+    # ROS node rate 
+    node_frequency: 10.0 # Time parameters
+    # ROS Topics
+    topics:
+        subscribers:
+            yaw: "/beacon/ref/yaw"
+            pitch: "/beacon/ref/pitch"
+            roll: "/beacon/ref/roll"
+            yaw_rate: "/beacon/ref/yaw_rate"
+            pich_rate: "/beacon/ref/pitch_rate"
+            roll_rate: "/beacon/ref/roll_rate"
+            surge: "/beacon/ref/surge"
+            sway: "/beacon/ref/sway"
+            heave: "/beacon/ref/heave"
+            depth: "/beacon/ref/depth"
+            altitude: "/beacon/ref/altitude"
+            altitude_safety: "/beacon/ref/altitude_safety"
+            depth_safety: "/beacon/ref/depth_safety"
+            state: "/beacon/nav/filter/state"
+        publishers:
+            thrust_body_request: "/beacon/thrust_body_request"
+
+### Way Point
+controls/waypoint:
+    node_frequency: 10.0
+    topics:
+        publishers:
+            yaw_ref: "/beacon/ref/yaw"
+            yaw_rate_ref: "/beacon/ref/yaw_rate"
+            u_ref: "/beacon/ref/surge"
+            v_ref: "/beacon/ref/sway"
+            flag: "/beacon/Flag"
+        subscribers:
+            flag: "/beacon/Flag"
+            state: "/beacon/nav/filter/state"
+        services:
+            wp_standard: "/beacon/controls/send_wp_standard"
+            wp_loose: "/beacon/controls/send_wp_loose"
+            wp_heading: "/beacon/controls/send_wp_heading"
+
+
+### Path Following
+controls/path_following:
+    node_frequency: 10.0
+    flag: "/beacon/Flag"
+    topics:
+        subscribers:
+            state: "/beacon/nav/filter/state"
+            path: "/beacon/PathData"
+            vc: "/beacon/PF/vc"
+        publishers:
+            # Publishers for linear motion
+            surge: "/beacon/ref/surge"
+            sway: "/beacon/ref/sway"
+            heave: "/beacon/ref/heave"
+    
+            # Publishers for angular motion
+            roll: "/beacon/ref/roll"
+            roll_rate: "/beacon/ref/roll_rate"
+            pitch: "/beacon/ref/pitch"
+            pitch_rate: "/beacon/ref/pitch_rate"
+            yaw: "/beacon/ref/yaw"
+            yaw_rate: "/beacon/ref/yaw_rate"
+    
+            # Publishers for the virtual target
+            rabbit: "/beacon/Gamma"
+            
+            # Observer for the currents
+            observer:
+                x: "/beacon/current/x"
+                y: "/beacon/current/y"
+
+            # Publish info for plots
+            pfollowing_debug: "beacon/pfollowing/debug"
+        # Define here the service names to switch between controllers 
+        services:
+            # Service names to start and stop the path following algorithm
+            start_pf: "/beacon/PFStart"
+            stop_pf: "/beacon/PFStop"
+            updates_gains_pf: "/beacon/PFUpdateGains"
+            reset_vt_pf: "/beacon/ResetVT"
+    
+            # Service names to switch the path following algorithm
+            relative_heading_pf: "/beacon/PFSetRelativeHeading"
+            marcelo_pf: "/beacon/PFSetMarcelo"
+            aguiar_pf: "/beacon/PFSetAguiar"
+            brevik_pf: "/beacon/PFSetBrevik"
+            fossen_pf: "/beacon/PFSetFossen"
+            romulo_pf: "/beacon/PFSetRomulo"
+            lapierre_pf: "/beacon/PFSetLapierre"
+            pramod_pf: "/beacon/PFSetPramod"
+            samson_pf: "/beacon/PFSetSamson"
+            relative_heading_pf: "/beacon/PFSetRelativeHeading"
+            # Service names related to the path
+            reset_path: "/beacon/ResetPath"
+            set_path_mode: "/beacon/SetMode"
+            # Service names related to the waypoint
+            wp_standard: "/beacon/controls/send_wp_standard"
+   
+### Cooperative control law
+cooperative/cpf_control:
+    node_frequency: 10
+    topics:
+        publishers: 
+            vc: "/beacon/PF/vc"
+            cpf_server_input: "/beacon/Internal/Gamma"
+        subscribers:
+            internal_gamma: "/beacon/PathData"
+            external_gamma: "/beacon/External/Gamma"
+        services:
+        # Service names to start and stop the path following algorithm
+            start_cpf: "/beacon/CPFStart"
+            stop_cpf: "/beacon/CPFStop"
+            change_topology: "/beacon/CPFChangeTopology"
+
+cooperative/cpf_wifi_server:
+    node_frequency: 10
+    topics:
+      subscribers:
+        internal_gamma: "/beacon/Internal/Gamma"
+      publishers:
+        cpf_gamma: "/beacon/External/Gamma"
+        
+cooperative/cpf_wifi_client:
+    node_frequency: 10
+    topics:
+      subscribers:
+        internal_gamma: "/beacon/Internal/Gamma"
+      publishers:
+        cpf_gamma: "/beacon/External/Gamma"
+
+## --------------------------- ## 
+#  medusa_planning              #
+## --------------------------- ##
+planning/dsor_paths:
+    node_frequency: 10.0
+    frame_id: "Path_frame"
+    topics:
+        subscribers:
+            gamma: "/beacon/Gamma"
+            vehicle_state: "/beacon/nav/filter/state"
+        publishers:
+            path_data: "/beacon/PathData"
+            virtual_target_state: "/beacon/Virtual/State"
+        # Services for constructing a path
+        services:
+            reset_path: "/beacon/ResetPath"
+            set_mode: "/beacon/SetMode"
+            arc2d_path: "/beacon/SpawnArc2DPath"
+            bernoulli_path: "/beacon/SpawnBernoulliPath"
+            circle2d_path: "/beacon/SpawnCircle2DPath"
+            line_path: "/beacon/SpawnLinePath"
+            speed:
+                const_rabbit_speed: "/beacon/SetConstVdRabbit"
+                const_vehicle_speed: "/beacon/SetConstVdVehicle"
+
+## --------------------------- ## 
+#  medusa_comms                #
+## --------------------------- ## 
+#acomms/modem:
+
+acomms/pinger:
+    topics:
+        publishers:
+            modem_send: "/beacon/acomms/modem/send"
+            meas_usbl_fix: "/beacon/sensors/usbl_fix"
+            trigger_serialization: "/beacon/acomms/scheme/trigger_serialization"
+            deserialize: "/beacon/acomms/scheme/payload_to_deserialize"
+        subscribers:
+            enable: "/beacon/acomms/scheme/enable"
+            modem_recv: "/beacon/acomms/modem/recv"
+            payload: "/beacon/acomms/serializer/payload_to_transmit"
+
+acomms/replier:
+    topics:
+        publishers:
+            modem_send: "/beacon/acomms/modem/send"
+            meas_usbl_fix: "/beacon/sensors/usbl_fix"
+            trigger_serialization: "/beacon/acomms/scheme/trigger_serialization"
+            deserialize: "/beacon/acomms/scheme/payload_to_deserialize"
+        subscribers:
+            modem_recv: "/beacon/acomms/modem/recv"
+            serialize: "/beacon/acomms/serializer/payload_to_transmit"
+
+acomms/data_serializer:
+    topics:
+        publishers:
+            to_modem: "/beacon/acomms/serializer/payload_to_transmit"
+        subscribers:
+            from_modem: "/beacon/acomms/scheme/payload_to_deserialize"
+            trigger: "/beacon/acomms/scheme/trigger_serialization"
+        
+acomms/dmac2medusa:
+    topics:
+        publishers:
+            medusa_fix: "/beacon/sensors/usbl_fix"
+        subscribers:
+            dmac_fix: "/beacon/acomms/modem/measurement/usbl_fix"
+            state: "/beacon/nav/filter/state"
+
+acomms/gnss2state:
+    topics:
+        subscribers: [
+            "/beacon/acomms/nav/filter/gnss"
+        ]
+        publishers: [
+            "/beacon/acomms/nav/filter/state",
+            "/beacon/state/utmzone"
+        ]
+
+acomms/pos2sim_modem:
+    topics/subscribers/position: "/beacon/sim/dynamics/position"
