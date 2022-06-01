@@ -67,7 +67,8 @@ class EKF_simple(EKF):
         self.P_apriori = (self.A_matrix() @ self.P_aposteriori @ np.transpose(self.A_matrix())) + self.Q_matrix()
 
     #TODO: Ended my last work here in update function
-    def update(self, x_beacon, y_beacon, psi, b, e, measures):
+    # measures = [RANGE, ELEVATION, BEARING]
+    def update(self, x_beacon, y_beacon, psi, measures):
         x_k = self.current_apriori_state[0, 0]
         y_k = self.current_apriori_state[1, 0]
         
@@ -85,7 +86,7 @@ class EKF_simple(EKF):
     # Beacon X and Y as input args, as these could be later dynamic... for now we consider the beacon as always in the same position
     def compute_iteration(self, x_beacon, y_beacon, u, v, psi, measures, t_step):
         self.predict(u, v, psi, t_step)
-        self.update(x_beacon, y_beacon, psi, measures[1], measures[2], measures)
+        self.update(x_beacon, y_beacon, psi, measures)
         #print(self.current_state)
 
 
@@ -98,8 +99,8 @@ if __name__ == '__main__':
     altitude = 5
     measures = np.array([[0, 1, 2], [4, 5, 6], [2, 2, 2]]) #[r, b, e]
     test_inputs = np.array([[0, 0], [1, 1], [2, 2]]) #[u, v]
-    ekf = EKF_simple(2, 3, 0, 0.01, 0, 0.01, altitude)
 
+    ekf = EKF_simple(2, 3, 0, 0.01, 0, 0.01, altitude)
     #I wanna test for 10 EKF iterations
     for i in range(3):
         ekf.compute_iteration(beacon_x, beacon_y, test_inputs[i, 0], test_inputs[i, 1], 0.2, measures[i], t_step)

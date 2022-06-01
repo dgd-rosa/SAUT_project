@@ -15,4 +15,5 @@ rostopic echo /mvector/sensors/usbl_fix (topico onde se tem o bearing, elevation
 
 
 
-
+ground truth - /mvector/State_gt
+gazebo coordinates - /gazebo/model_states
