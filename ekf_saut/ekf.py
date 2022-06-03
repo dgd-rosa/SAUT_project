@@ -47,8 +47,8 @@ class EKF_simple(EKF):
         return (np.identity(self.measurement_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
     
     def H_matrix(self, x_beacon, y_beacon):
-        x = self.current_apriori_state[0] - x_beacon
-        y = self.current_apriori_state[1] - y_beacon
+        x = self.current_apriori_state[0,0] - x_beacon
+        y = self.current_apriori_state[1,0] - y_beacon
 
         aux_sqrt = np.sqrt((x)**2 + (y)**2 + self.altitude**2) # we consider z_beacon=0
 
@@ -79,7 +79,7 @@ class EKF_simple(EKF):
         
         K = self.kalman_gain(self.H_matrix(x_beacon, y_beacon), self.R_matrix())
         #x_k+1 = x_apriori + K(z - h(x_k))
-        self.current_state = self.current_apriori_state + K@(np.transpose(measures) - h)
+        self.current_state[:,0] = self.current_apriori_state[:,0] + K@(np.transpose(measures) - h)
 
         self.P_aposteriori = (np.identity(self.state_dimension) - K@h)@self.P_apriori
 
@@ -87,7 +87,9 @@ class EKF_simple(EKF):
     def compute_iteration(self, x_beacon, y_beacon, u, v, psi, measures, t_step):
         self.predict(u, v, psi, t_step)
         self.update(x_beacon, y_beacon, psi, measures)
-        #print(self.current_state)
+    
+    def getCurrent_State(self):
+        return self.current_state
 
 
 # The main here is just for testing... later on the EKF will be called from a ROS Node
@@ -104,3 +106,4 @@ if __name__ == '__main__':
     #I wanna test for 10 EKF iterations
     for i in range(3):
         ekf.compute_iteration(beacon_x, beacon_y, test_inputs[i, 0], test_inputs[i, 1], 0.2, measures[i], t_step)
+        print(ekf.getCurrent_State())
