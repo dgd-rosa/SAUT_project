@@ -6,6 +6,7 @@ find_package(catkin REQUIRED
  COMPONENTS
  rospy
  dsor_msgs
+ gazebo_msgs
 )
 
 

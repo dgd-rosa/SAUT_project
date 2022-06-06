@@ -12,5 +12,6 @@
  <buildtool_depend>catkin</buildtool_depend>
  <depend>rospy</depend>
  <depend>dsor_msgs</depend>
+ <depend>gazebo_msgs</depend>
 
 </package>

@@ -89,10 +89,6 @@ class EKF_simple(EKF):
         
         H = self.H_matrix(x_beacon, y_beacon)
         K = self.kalman_gain(H, self.R_matrix())
-        #x_k+1 = x_apriori + K(z - h(x_k))
-        print("H: " + str(h) + "\n")
-        print("measur: " + str(measures) + "\n")
-        print("CONTA: " + str((measures - h)) + "\n")
         self.current_state[:,0] = self.current_apriori_state[:,0] + K@(measures - h)
         self.P_aposteriori = (np.identity(self.state_dimension) - K@H) @self.P_apriori
 
@@ -105,6 +101,8 @@ class EKF_simple(EKF):
         return self.current_state
     def getCurrentAprioriState(self):
         return self.current_apriori_state
+    def getCovariance(self):
+        return self.P_aposteriori
 
 
 # The main here is just for testing... later on the EKF will be called from a ROS Node
