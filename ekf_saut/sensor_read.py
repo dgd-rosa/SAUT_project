@@ -27,7 +27,7 @@ def callback_vel(data):
 
 def callback_yaw(data):
     global yaw
-    yaw = data.value[2] * np.pi / 180
+    yaw = data.value[2]
        
 
 if __name__ == '__main__':

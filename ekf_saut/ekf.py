@@ -26,8 +26,6 @@ class EKF_simple(EKF):
         self.measurement_dimension = measurement_dimension
         self.altitude = altitude # it is always constant
         self.current_apriori_state = np.zeros((state_dimension, 1))
-        self.current_apriori_state[0, 0] = 19.71
-        self.current_apriori_state[1, 0] = 0.0114
         self.current_state = np.zeros((state_dimension, 1))
 
 
@@ -54,8 +52,13 @@ class EKF_simple(EKF):
         y = self.current_apriori_state[1,0] - y_beacon
 
         aux_sqrt = np.sqrt((x)**2 + (y)**2 + self.altitude**2) # we consider z_beacon=0
-
-        return np.array([[ (x / aux_sqrt), (y / aux_sqrt) ], [ (y / (x**2 + y**2)), (-x / (x**2 + y**2)) ], [ ((-self.altitude*(2*x**2 + y**2)) / (np.sqrt(x**2 + y**2) * (x**4 + x**2 * y**2 + self.altitude**2)) ), ((-x*y*self.altitude) / (np.sqrt(x**2 + y**2) * (x**2 * y**2 + y**4 + self.altitude**2)))]]).reshape(3, 2)
+        a = (x / aux_sqrt)
+        b = (y / aux_sqrt)
+        c = (y / (x**2 + y**2))
+        d = (-x / (x**2 + y**2))
+        e = ((-self.altitude*(2*x**2 + y**2)) / (np.sqrt(x**2 + y**2) * (x**4 + x**2 * y**2 + self.altitude**2)))
+        f = ((-x*y*self.altitude) / (np.sqrt(x**2 + y**2) * (x**2 * y**2 + y**4 + self.altitude**2)))
+        return np.array([[ a,  b], [c,  d], [e , f]]).reshape(3, 2)
 
     #TODO ver ruído pois ruido = v R v^T
     def kalman_gain(self, H, R):
@@ -69,36 +72,29 @@ class EKF_simple(EKF):
 
         # Compute the a priori error covariance estimate
         self.P_apriori = (self.A_matrix() @ self.P_aposteriori @ np.transpose(self.A_matrix())) + self.Q_matrix()
-        # print("**** Predict ****")
-        # print("current_apriori_state => " + str(self.current_apriori_state) + "\n")
-        # print("P_apriori => " + str(self.P_apriori) + "\n")
 
     #TODO: Ended my last work here in update function
     # measures = [RANGE, ELEVATION, BEARING]
     def update(self, x_beacon, y_beacon, psi, measures):
         x_k = self.current_apriori_state[0, 0]
         y_k = self.current_apriori_state[1, 0]
-        print("Measyres: " + str(measures.shape) + "\n")
+        print("x_k, y_k = (" + str(x_k) + "," + str(y_k) + "\n")
+        print("psi " + str(psi) + "\n")
         
         h_r = np.sqrt((x_k - x_beacon)**2 + (y_k - y_beacon)**2 + self.altitude**2) # we consider z_beacon=0
-        h_b = np.arctan2((x_k - x_beacon), (y_k - y_beacon))
+        h_b = -np.arctan2((y_k - y_beacon), (x_k - x_beacon)) + psi
         h_e = np.arctan2(-self.altitude, (np.sqrt((x_k - x_beacon)**2 + (y_k - y_beacon)**2)))
         h = np.array([h_r, h_e, h_b])
         h = np.transpose(h)
         
-        K = self.kalman_gain(self.H_matrix(x_beacon, y_beacon), self.R_matrix())
+        H = self.H_matrix(x_beacon, y_beacon)
+        K = self.kalman_gain(H, self.R_matrix())
         #x_k+1 = x_apriori + K(z - h(x_k))
         print("H: " + str(h) + "\n")
         print("measur: " + str(measures) + "\n")
         print("CONTA: " + str((measures - h)) + "\n")
         self.current_state[:,0] = self.current_apriori_state[:,0] + K@(measures - h)
-
-        self.P_aposteriori = (np.identity(self.state_dimension) - K@h)@self.P_apriori
-        # print("*** Update ***")
-        # print("h => " + str(h) + "\n")
-        # print("K => " + str(K) + "\n")
-        # print("current_state => " + str(self.current_state) + "\n")
-        # print("P_aposteriori=> " + str(self.P_aposteriori) + "\n")
+        self.P_aposteriori = (np.identity(self.state_dimension) - K@H) @self.P_apriori
 
     # Beacon X and Y as input args, as these could be later dynamic... for now we consider the beacon as always in the same position
     def compute_iteration(self, x_beacon, y_beacon, u, v, psi, measures, t_step):
@@ -107,6 +103,8 @@ class EKF_simple(EKF):
     
     def getCurrent_State(self):
         return self.current_state
+    def getCurrentAprioriState(self):
+        return self.current_apriori_state
 
 
 # The main here is just for testing... later on the EKF will be called from a ROS Node
