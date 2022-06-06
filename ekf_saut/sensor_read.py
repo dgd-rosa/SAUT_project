@@ -64,4 +64,6 @@ if __name__ == '__main__':
             ekf.compute_iteration(x_beacon, y_beacon, vel[0], vel[1], yaw, measures, t_step)
             measurement_flag = False
             print(ekf.getCurrent_State())
+            with open('medusa_stopped.txt', 'a') as f:
+                f.write(str(ekf.getCurrent_State()) + " " + str(ekf.getCovariance()) + " " + str(measures) + " " + str(vel) + " " + str(yaw) + " " + str(gt_pos) + "\n")
         rate.sleep()
