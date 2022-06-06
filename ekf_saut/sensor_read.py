@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import rospy
+import numpy as np
 from medusa_msgs.msg import mUSBLFix
 from dsor_msgs.msg import Measurement
 from ekf import EKF_simple
 
 #init [range, elevation, bearing]
-measures = [-1000, -1000, -1000]
+measures = np.array([-1000, -1000, -1000])
 vel = [0, 0]
 yaw = -1000
 
@@ -14,9 +15,9 @@ measurement_flag = False
 def callback_beacon (data):
     global measures
     global measurement_flag
-    measures = [data.range, data.elevation, data.bearing]
+    measures = np.array([data.range, data.elevation, data.bearing])
     measurement_flag = True
-
+    print("Beacon measures: " + str(measures) + "\n")
 def callback_vel(data):
     u = data.value[0]
     v = data.value[1]
@@ -26,7 +27,8 @@ def callback_vel(data):
 
 def callback_yaw(data):
     global yaw
-    yaw = data.value[2]    
+    yaw = data.value[2] * np.pi / 180
+       
 
 if __name__ == '__main__':
     rospy.init_node('custom_listener', anonymous=True)
@@ -35,12 +37,12 @@ if __name__ == '__main__':
     measurement_dim = 3
     z = 1.5
     process_mean = 0 
-    process_variance = 0.01
-    measurement_variance = 0.01
+    process_variance = 0.000000001
+    measurement_variance = 0.000000001
     measurement_mean = 0
     x_beacon = -20
     y_beacon = 30
-    t_step = 0.1
+    t_step = 1
 
     ekf = EKF_simple(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance,z)
     rospy.Subscriber("/mvector/measurement/velocity", Measurement, callback_vel)
