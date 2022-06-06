@@ -4,6 +4,7 @@ import numpy as np
 from medusa_msgs.msg import mUSBLFix
 from dsor_msgs.msg import Measurement
 from ekf import EKF_simple
+import sys
 
 #init [range, elevation, bearing]
 measures = np.array([-1000, -1000, -1000])
@@ -58,12 +59,21 @@ if __name__ == '__main__':
     rospy.Subscriber("/mvector/sensors/usbl_fix", mUSBLFix, callback_beacon)
     rospy.Subscriber("/mvector/measurement/position", Measurement, callback_gt)
     
-
+    counter = 1
     while not rospy.is_shutdown():
         if measurement_flag:
             ekf.compute_iteration(x_beacon, y_beacon, vel[0], vel[1], yaw, measures, t_step)
             measurement_flag = False
             print(ekf.getCurrent_State())
             with open('medusa_stopped.txt', 'a') as f:
-                f.write(str(ekf.getCurrent_State()) + " " + str(ekf.getCovariance()) + " " + str(measures) + " " + str(vel) + " " + str(yaw) + " " + str(gt_pos) + "\n")
+                f.write(str(ekf.getCurrent_State()[0, 0]) + " " + str(ekf.getCurrent_State()[1, 0]) + "\n")
+                f.write(str(ekf.getCovariance()[0, 0]) + " " + str(ekf.getCovariance()[0, 1]) + " " + str(ekf.getCovariance()[1, 0]) + " " + str(ekf.getCovariance()[1, 1]) + "\n") 
+                f.write(str(measures[0]) + " " + str(measures[1]) + " " + str(measures[2]) + "\n")
+                f.write(str(vel[0]) + " " + str(vel[1]) + "\n")
+                f.write(str(yaw) + "\n")
+                f.write(str(gt_pos[0]) + " " + str(gt_pos[1])  + "\n")
+                f.write("\n")
+            counter = counter + 1
+            if counter == 20:
+                sys.exit()
         rate.sleep()
