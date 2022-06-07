@@ -8,6 +8,7 @@ find_package(catkin REQUIRED
  rospy
  dsor_msgs
  gazebo_msgs
+ auv_msgs
  std_msgs
  message_generation
  geometry_msgs

@@ -5,7 +5,7 @@ from medusa_msgs.msg import mUSBLFix
 from dsor_msgs.msg import Measurement
 from ekf_saut.msg import MsgEKF
 from ekf import EKF_simple
-import sys
+from auv_msgs.msg import NavigationStatus
 import itertools
 
 #init [range, elevation, bearing]
@@ -13,6 +13,7 @@ measures = np.array([-1000, -1000, -1000])
 vel = [0, 0]
 yaw = -1000
 utm_pos = [4290794.43, 491936.56]
+nav_pos = [-1000, -1000]
 
 measurement_flag = False
 gt_pos = [-1, -1]
@@ -33,47 +34,54 @@ def callback_yaw(data):
     global yaw
     yaw = data.value[2]
 
+def callback_nav(data):
+    global nav_pos
+    nav_pos = [data.position.north, data.position.east]
 
 if __name__ == '__main__':
     rospy.init_node('custom_listener', anonymous=True)
     rate = rospy.Rate(10)
     state_dim =2 #alterar para ter o yaw
     measurement_dim = 3
-    z = 1.5
+    z = 0
     process_mean = 0 
-    process_variance = 0.000000001
-    measurement_variance = 0.00000000001
+    process_variance = 0.1
+    measurement_variance = 0.1
     measurement_mean = 0
     #em NED, ENU = (-20, 30)
     x_beacon = 30
     y_beacon = 20
-    t_step = 1
+    t_step = 0.01
 
     ekf = EKF_simple(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance,z)
     rospy.Subscriber("/mvector/measurement/velocity", Measurement, callback_vel)
     rospy.Subscriber("/mvector/measurement/orientation", Measurement, callback_yaw)
     rospy.Subscriber("/mvector/sensors/usbl_fix", mUSBLFix, callback_beacon)
+    rospy.Subscriber("/mvector/nav/filter/state", NavigationStatus, callback_nav)
     pub = rospy.Publisher('chatter', MsgEKF, queue_size=1)
+
     pose = MsgEKF()
         
-    counter = 1
     while not rospy.is_shutdown():
+        ekf.predict(vel[0], vel[1], yaw, t_step)
+        #Update when there is new measurements
         if measurement_flag:
-            ekf.compute_iteration(x_beacon, y_beacon, vel[0], vel[1], yaw, measures, t_step)
+            ekf.update(x_beacon, y_beacon, yaw, measures)
             measurement_flag = False
         
-            # ENU
-            #pose.state.x = ekf.getCurrent_State()[1, 0] #+ utm_pos[0]
-            #pose.state.y = ekf.getCurrent_State()[0, 0] #+ utm_pos[1]
-            # NED
-            pose.state.x = ekf.getCurrent_State()[0, 0]
-            pose.state.y = ekf.getCurrent_State()[1, 0]
-            pose.state.z = 0
-            pose.yaw = yaw
-            cov = ekf.getCovariance().tolist()
-            pose.covariance = list( itertools.chain.from_iterable( cov ))
+        # ENU
+        #pose.state.x = ekf.getCurrent_State()[1, 0] #+ utm_pos[0]
+        #pose.state.y = ekf.getCurrent_State()[0, 0] #+ utm_pos[1]
+        # NED
+        pose.state.x = ekf.getCurrent_State()[0, 0] + utm_pos[0]
+        pose.state.y = ekf.getCurrent_State()[1, 0] + utm_pos[1]
+        pose.state.z = 0
+        pose.yaw = yaw
+        cov = ekf.getCovariance().tolist()
+        pose.covariance = list( itertools.chain.from_iterable( cov ))
+    
+        pose.error = [pose.state.x - nav_pos[0], pose.state.y - nav_pos[1]]
 
-
-            pub.publish(pose)
+        pub.publish(pose)
 
         rate.sleep()
