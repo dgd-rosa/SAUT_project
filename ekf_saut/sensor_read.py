@@ -3,14 +3,16 @@ import rospy
 import numpy as np
 from medusa_msgs.msg import mUSBLFix
 from dsor_msgs.msg import Measurement
+from ekf_saut.msg import MsgEKF
 from ekf import EKF_simple
 import sys
+import itertools
 
 #init [range, elevation, bearing]
 measures = np.array([-1000, -1000, -1000])
 vel = [0, 0]
 yaw = -1000
-utm_pos = [4290794.443734356, 491936.5871999316]
+utm_pos = [4290794.43, 491936.56]
 
 measurement_flag = False
 gt_pos = [-1, -1]
@@ -31,12 +33,6 @@ def callback_yaw(data):
     global yaw
     yaw = data.value[2]
 
-def callback_gt(data):
-    global gt_pos
-    if(data.header.frame_id == "mvector_gnss"):
-        gt_pos[0] = data.value[0] - utm_pos[0]
-        gt_pos[1] = data.value[1] - utm_pos[1]
-        print(gt_pos)
 
 if __name__ == '__main__':
     rospy.init_node('custom_listener', anonymous=True)
@@ -46,7 +42,7 @@ if __name__ == '__main__':
     z = 1.5
     process_mean = 0 
     process_variance = 0.000000001
-    measurement_variance = 0.000000001
+    measurement_variance = 0.00000000001
     measurement_mean = 0
     #em NED, ENU = (-20, 30)
     x_beacon = 30
@@ -57,23 +53,27 @@ if __name__ == '__main__':
     rospy.Subscriber("/mvector/measurement/velocity", Measurement, callback_vel)
     rospy.Subscriber("/mvector/measurement/orientation", Measurement, callback_yaw)
     rospy.Subscriber("/mvector/sensors/usbl_fix", mUSBLFix, callback_beacon)
-    rospy.Subscriber("/mvector/measurement/position", Measurement, callback_gt)
-    
+    pub = rospy.Publisher('chatter', MsgEKF, queue_size=1)
+    pose = MsgEKF()
+        
     counter = 1
     while not rospy.is_shutdown():
         if measurement_flag:
             ekf.compute_iteration(x_beacon, y_beacon, vel[0], vel[1], yaw, measures, t_step)
             measurement_flag = False
-            print(ekf.getCurrent_State())
-            with open('medusa_stopped.txt', 'a') as f:
-                f.write(str(ekf.getCurrent_State()[0, 0]) + " " + str(ekf.getCurrent_State()[1, 0]) + "\n")
-                f.write(str(ekf.getCovariance()[0, 0]) + " " + str(ekf.getCovariance()[0, 1]) + " " + str(ekf.getCovariance()[1, 0]) + " " + str(ekf.getCovariance()[1, 1]) + "\n") 
-                f.write(str(measures[0]) + " " + str(measures[1]) + " " + str(measures[2]) + "\n")
-                f.write(str(vel[0]) + " " + str(vel[1]) + "\n")
-                f.write(str(yaw) + "\n")
-                f.write(str(gt_pos[0]) + " " + str(gt_pos[1])  + "\n")
-                f.write("\n")
-            counter = counter + 1
-            if counter == 20:
-                sys.exit()
+        
+            # ENU
+            #pose.state.x = ekf.getCurrent_State()[1, 0] #+ utm_pos[0]
+            #pose.state.y = ekf.getCurrent_State()[0, 0] #+ utm_pos[1]
+            # NED
+            pose.state.x = ekf.getCurrent_State()[0, 0]
+            pose.state.y = ekf.getCurrent_State()[1, 0]
+            pose.state.z = 0
+            pose.yaw = yaw
+            cov = ekf.getCovariance().tolist()
+            pose.covariance = list( itertools.chain.from_iterable( cov ))
+
+
+            pub.publish(pose)
+
         rate.sleep()

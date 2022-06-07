@@ -1,17 +1,20 @@
 <?xml version="1.0"?>
 <package format="2">
- <name>ekf_saut</name>
- <version>1.0.0</version>
- <description>TODO</description>
+    <name>ekf_saut</name>
+    <version>1.0.0</version>
+    <description>TODO</description>
 
- <license>MIT</license>
+    <license>MIT</license>
 
- <author email="daniel.garcia.domingos.rosa@tecnico.ulisboa.pt">Daniel Rosa</author>
- <maintainer email="daniel.garcia.domingos.rosa@tecnico.ulisboa.pt">Daniel Rosa</maintainer>
+    <author email="daniel.garcia.domingos.rosa@tecnico.ulisboa.pt">Daniel Rosa</author>
+    <maintainer email="daniel.garcia.domingos.rosa@tecnico.ulisboa.pt">Daniel Rosa</maintainer>
 
- <buildtool_depend>catkin</buildtool_depend>
- <depend>rospy</depend>
- <depend>dsor_msgs</depend>
- <depend>gazebo_msgs</depend>
+    <buildtool_depend>catkin</buildtool_depend>
+    <depend>rospy</depend>
+    <depend>dsor_msgs</depend>
+    <depend>gazebo_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <build_depend>message_generation</build_depend>
+    <exec_depend>message_runtime</exec_depend>
 
 </package>
