@@ -69,9 +69,6 @@ if __name__ == '__main__':
             ekf.update(x_beacon, y_beacon, yaw, measures)
             measurement_flag = False
         
-        # ENU
-        #pose.state.x = ekf.getCurrent_State()[1, 0] #+ utm_pos[0]
-        #pose.state.y = ekf.getCurrent_State()[0, 0] #+ utm_pos[1]
         # NED
         pose.state.x = ekf.getCurrent_State()[0, 0] + utm_pos[0]
         pose.state.y = ekf.getCurrent_State()[1, 0] + utm_pos[1]
