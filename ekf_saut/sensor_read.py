@@ -43,7 +43,7 @@ if __name__ == '__main__':
     rate = rospy.Rate(10)
     state_dim =2 #alterar para ter o yaw
     measurement_dim = 3
-    z = 0
+    z = 0.3
     process_mean = 0 
     process_variance = 0.1
     measurement_variance = 0.1
@@ -51,9 +51,9 @@ if __name__ == '__main__':
     #em NED, ENU = (-20, 30)
     x_beacon = 30
     y_beacon = 20
-    t_step = 0.01
+    t_step = 0.1
 
-    ekf = EKF_simple(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance,z)
+    ekf = EKF_simple(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance, z)
     rospy.Subscriber("/mvector/measurement/velocity", Measurement, callback_vel)
     rospy.Subscriber("/mvector/measurement/orientation", Measurement, callback_yaw)
     rospy.Subscriber("/mvector/sensors/usbl_fix", mUSBLFix, callback_beacon)
@@ -61,12 +61,17 @@ if __name__ == '__main__':
     pub = rospy.Publisher('chatter', MsgEKF, queue_size=1)
 
     pose = MsgEKF()
+
+    print("Current State: " + str(ekf.getCurrent_State()))
+    print("A Posteriori: " + str(ekf.getAprioriCovariance()))
         
     while not rospy.is_shutdown():
         ekf.predict(vel[0], vel[1], yaw, t_step)
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, yaw, measures)
+            print("Current State: " + str(ekf.getCurrent_State()))
+            print("A Posteriori: " + str(ekf.getAprioriCovariance()))
             measurement_flag = False
         
         # NED
