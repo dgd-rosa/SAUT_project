@@ -26,7 +26,6 @@ class EKF_simple(EKF):
         self.measurement_dimension = measurement_dimension
         self.altitude = altitude # it is always constant
         self.current_state = np.zeros((state_dimension, 1))
-        self.current_state[0, 0] = -20
 
         self.process_mean = process_mean
         self.process_variance = process_variance
@@ -41,37 +40,35 @@ class EKF_simple(EKF):
         return np.identity(self.state_dimension)
 
     def Q_matrix(self):
-        return (np.identity(self.state_dimension) * (self.process_variance))
-        #return (np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
+        #return (np.identity(self.state_dimension) * (self.process_variance))
+        return (np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
     
     def R_matrix(self):
-        return (np.identity(self.measurement_dimension) * (self.measurement_variance))
-        #return (np.identity(self.measurement_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
+        #return (np.identity(self.measurement_dimension) * (self.measurement_variance))
+        return (np.identity(self.measurement_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
     
     def H_matrix(self, x_beacon, y_beacon):
-        x = self.current_state[0,0] - x_beacon
-        y = self.current_state[1,0] - y_beacon
-
-        x_inv = x_beacon - self.current_state[0,0]
-        y_inv = y_beacon - self.current_state[1,0]
+        x = x_beacon - self.current_state[0,0]
+        y = y_beacon - self.current_state[1,0]
 
         aux_sqrt = np.sqrt((x)**2 + (y)**2 + self.altitude**2) # we consider z_beacon=0
         #Range Derivatives
         a = (x / aux_sqrt)
         b = (y / aux_sqrt)
-        #Bearing derivatives
-        c = (y / (x**2 + y**2))
-        d = (-x / (x**2 + y**2))
         #Elevation derivatives
-        e = -((-self.altitude * x_inv) / ( np.sqrt(x_inv**2 + y_inv**2) * ( x_inv**2 + y_inv**2 + self.altitude**2 ) )) # Actually it is - (-self.altitude * x_inv) / ( np.sqrt(x_inv**2 + y_inv**2) * ( x_inv**2 + y_inv**2 + c**2 - 2*z_beaco*z + z**2 ) ) But the ship is always at z=0
-        f = -((-self.altitude * y_inv) / ( np.sqrt(x_inv**2 + y_inv**2) * ( x_inv**2 + y_inv**2 + self.altitude**2 ) )) # Same here
+        c = -((self.altitude * x) / ( np.sqrt(x**2 + y**2) * ( x**2 + y**2 + self.altitude**2 ) )) # Actually it is - (-self.altitude * x_inv) / ( np.sqrt(x_inv**2 + y_inv**2) * ( x_inv**2 + y_inv**2 + c**2 - 2*z_beaco*z + z**2 ) ) But the ship is always at z=0
+        d = -((self.altitude * y) / ( np.sqrt(x**2 + y**2) * ( x**2 + y**2 + self.altitude**2 ) )) # Same here
+        #Bearing derivatives
+        e = (-y / (x**2 + y**2))
+        f = (x / (x**2 + y**2))
+
 
         #Previous derivatives... both the current and the previous were done in wolframAlpha... how can they be different?
         #e = ((-self.altitude*(2*x**2 + y**2)) / (np.sqrt(x**2 + y**2) * (x**4 + x**2 * y**2 + self.altitude**2)))
         #f = ((-x*y*self.altitude) / (np.sqrt(x**2 + y**2) * (x**2 * y**2 + y**4 + self.altitude**2)))
         #return np.array([[ a,  b], [c,  d], [e , f]]).reshape(3, 2)
 
-        return np.array([[ a,  b], [e,  f], [c , d]]).reshape(3, 2)
+        return np.array([[ a,  b], [c, d], [e, f]]).reshape(3, 2)
 
     def kalman_gain(self, H, R):
         
@@ -91,10 +88,14 @@ class EKF_simple(EKF):
     def update(self, x_beacon, y_beacon, psi, measures):
         x_k = self.current_state[0, 0]
         y_k = self.current_state[1, 0]
-        
-        h_r = np.sqrt((x_k - x_beacon)**2 + (y_k - y_beacon)**2 + self.altitude**2) # we consider z_beacon=0
-        h_b = -np.arctan2((y_k - y_beacon), (x_k - x_beacon))
-        h_e = np.arctan2(-self.altitude, (np.sqrt((x_k - x_beacon)**2 + (y_k - y_beacon)**2)))
+        print("Antes do update:")
+        print("Current State: " + str(self.getCurrent_State()))
+        print("A Posteriori: " + str(self.P_aposteriori))
+        print("*********")
+
+        h_r = np.sqrt((x_k - x_beacon)**2 + (y_beacon - y_k)**2 + self.altitude**2) # we consider z_beacon=0
+        h_b = -np.arctan2((y_beacon - y_k), (x_beacon - x_k))
+        h_e = np.arctan2(-self.altitude, (np.sqrt((x_beacon - x_k)**2 + (y_beacon - y_k)**2)))
         
         
         h = np.array([h_r, h_e, h_b])
@@ -106,11 +107,10 @@ class EKF_simple(EKF):
         K = self.kalman_gain(H, self.R_matrix())
         print("K: " + str(K) + "\n")
         print("K(y-h): " + str(K@(measures - h)) + "\n" )
-        # self.current_state[0, 0] = self.current_state[0, 0] + K[0] @ (measures - h)
-        # self.current_state[1, 0] = self.current_state[1, 0] + K[1] @ (measures - h)
 
         self.current_state[:,0] = self.current_state[:,0] + K@(measures - h)
         self.P_aposteriori = (np.identity(self.state_dimension) - K@H) @ self.P_apriori
+
 
     # Beacon X and Y as input args, as these could be later dynamic... for now we consider the beacon as always in the same position
     def compute_iteration(self, x_beacon, y_beacon, u, v, psi, measures, t_step):

@@ -4,8 +4,8 @@ processes:
       delay_before_start: 0.0
       cmd: 'roslaunch bringup_saut ship_simulation.launch'
       args:
-            - x:= -20.0
-            - y:= 30.0
+            - x:= 20.0
+            - y:= 40.0
             - z:= 0.0
             - roll:= 0.0
             - pitch:= 0.0

@@ -43,13 +43,14 @@ if __name__ == '__main__':
     rate = rospy.Rate(10)
     state_dim =2 #alterar para ter o yaw
     measurement_dim = 3
-    z = 0.3
+    z = 0.2
     process_mean = 0 
     process_variance = 0.1
     measurement_variance = 0.1
     measurement_mean = 0
     #em NED, ENU = (-20, 30)
-    x_beacon = 30
+    #TODO: Recheck this conversion
+    x_beacon = 40
     y_beacon = 20
     t_step = 0.1
 
@@ -62,8 +63,6 @@ if __name__ == '__main__':
 
     pose = MsgEKF()
 
-    print("Current State: " + str(ekf.getCurrent_State()))
-    print("A Posteriori: " + str(ekf.getAprioriCovariance()))
         
     while not rospy.is_shutdown():
         ekf.predict(vel[0], vel[1], yaw, t_step)
@@ -72,6 +71,7 @@ if __name__ == '__main__':
             ekf.update(x_beacon, y_beacon, yaw, measures)
             print("Current State: " + str(ekf.getCurrent_State()))
             print("A Posteriori: " + str(ekf.getAprioriCovariance()))
+            print("********\n")
             measurement_flag = False
         
         # NED
