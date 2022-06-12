@@ -34,7 +34,8 @@ class EKF_simple(EKF):
 
         tmp_vector = np.ones(state_dimension) * 0.01
         self.P_apriori = np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2)
-        self.P_aposteriori = np.diag(tmp_vector)
+        self.P_aposteriori = (np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
+        #self.P_aposteriori = np.diag(tmp_vector)
 
     def A_matrix(self):
         return np.identity(self.state_dimension)
@@ -94,7 +95,7 @@ class EKF_simple(EKF):
         print("*********")
 
         h_r = np.sqrt((x_k - x_beacon)**2 + (y_beacon - y_k)**2 + self.altitude**2) # we consider z_beacon=0
-        h_b = -np.arctan2((y_beacon - y_k), (x_beacon - x_k))
+        h_b = np.arctan2((y_beacon - y_k), (x_beacon - x_k)) + np.pi
         h_e = np.arctan2(-self.altitude, (np.sqrt((x_beacon - x_k)**2 + (y_beacon - y_k)**2)))
         
         

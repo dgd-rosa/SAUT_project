@@ -46,7 +46,7 @@ if __name__ == '__main__':
     z = 0.2
     process_mean = 0 
     process_variance = 0.1
-    measurement_variance = 0.1
+    measurement_variance = 0.01
     measurement_mean = 0
     #em NED, ENU = (-20, 30)
     #TODO: Recheck this conversion
