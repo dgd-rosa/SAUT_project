@@ -128,3 +128,25 @@ def spawn_lawn_mower(center_x: float, center_y: float, z: float, vehicle_name: s
     
     # Spawn a line
     spawn_line([center_x-25.84, center_y-40.19, z], [center_x+40.41, center_y-39.10, z], [0.0, 0.0, 0.0], vehicle_name, speed)
+
+def spawn_lawn_small(center_x: float, center_y: float, z: float, vehicle_name: str, speed: float):
+    # Spawn a line
+    spawn_line([center_x, center_y, z], [center_x+5, center_y, z], [0.0, 0.0, 0.0], vehicle_name, speed) 
+    
+    # Spawn an arc
+    spawn_arc([center_x+5, center_y], [center_x+5, center_y-5], [center_x+5, center_y-2.5], -1, z, vehicle_name, speed)
+    
+    # Spawn a line
+    spawn_line([center_x+5, center_y-5, z], [center_x, center_y-5, z], [0.0, 0.0, 0.0], vehicle_name, speed)
+
+    # Spawn an arc
+    spawn_arc([center_x, center_y-5], [center_x, center_y-10], [center_x, center_y-7.5], 1, z, vehicle_name, speed)
+
+    # Spawn a line
+    spawn_line([center_x, center_y-10, z], [center_x+5, center_y-10, z], [0.0, 0.0, 0.0], vehicle_name, speed)
+    
+    # Spawn an arc
+    spawn_arc([center_x+5, center_y-10], [center_x+5, center_y-15], [center_x+5, center_y-12.5], -1, z, vehicle_name, speed)
+    
+    # Spawn a line
+    spawn_line([center_x+5, center_y-15, z], [center_x, center_y-15, z], [0.0, 0.0, 0.0], vehicle_name, speed)
