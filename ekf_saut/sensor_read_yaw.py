@@ -9,19 +9,21 @@ from auv_msgs.msg import NavigationStatus
 import itertools
 
 #init [range, elevation, bearing]
-measures = np.array([-1000, -1000, -1000])
+measures = np.array([-1000, -1000, -1000, -1000])
 vel = [0, 0]
 yaw = -1000
 yaw_rate = 0.0
 utm_pos = [4290794.43, 491936.56]
 nav_pos = [-1000, -1000]
 
+pose_array = []
+nav_array = []
 measurement_flag = False
-gt_pos = [-1, -1]
 def callback_beacon (data):
     global measures
     global measurement_flag
-    measures = np.array([data.range, data.elevation, data.bearing - np.pi])
+    global yaw
+    measures = np.array([data.range, data.elevation, data.bearing - np.pi, yaw])
     measurement_flag = True
 
 def callback_vel(data):
@@ -39,13 +41,31 @@ def callback_yaw(data):
 
 def callback_nav(data):
     global nav_pos
-    nav_pos = [data.position.north, data.position.east]
+    nav_pos = [data.position.north, data.position.east, data.orientation.z]
+
+def dead_fcn():
+    with open('ekf_saut/medusa_stop.txt', 'w') as f:
+        for pose in pose_array:
+            f.write(str(pose.state.x))
+            f.write('\t')
+            f.write(str(pose.state.y))
+            f.write('\t')
+            f.write(str(pose.yaw))
+            f.write('\t')
+            f.write(str(nav_pos[0]))
+            f.write('\t')
+            f.write(str(nav_pos[1]))
+            f.write('\t')
+            f.write(str(nav_pos[2]))
+            f.write('\t')
+            f.write(str(pose.covariance))
+            f.write('\n')
 
 if __name__ == '__main__':
     rospy.init_node('custom_listener', anonymous=True)
     rate = rospy.Rate(10)
     state_dim =3 #com o yaw
-    measurement_dim = 3
+    measurement_dim = 4 #com yaw
     z = 0.2
     process_mean = 0 
     process_variance = 0.1
@@ -81,12 +101,16 @@ if __name__ == '__main__':
         pose.state.x = ekf.getCurrent_State()[0, 0] + utm_pos[0]
         pose.state.y = ekf.getCurrent_State()[1, 0] + utm_pos[1]
         pose.state.z = 0
-        pose.yaw = yaw
+        pose.yaw = np.degrees(ekf.getCurrent_State()[2,0])
         cov = ekf.getCovariance().tolist()
         pose.covariance = list( itertools.chain.from_iterable( cov ))
     
         pose.error = [pose.state.x - nav_pos[0], pose.state.y - nav_pos[1]]
-
+        
+        pose_array.append(pose)
+        nav_array.append(nav_pos)
         pub.publish(pose)
 
+
         rate.sleep()
+    rospy.on_shutdown(dead_fcn)

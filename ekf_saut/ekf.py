@@ -172,7 +172,10 @@ class EKF_withOrientation():
         h = ( (x - x_beacon) / ((x - x_beacon)**2 + (y_beacon - y)**2))
         i = 0
 
-        return np.array([[ a,  b, c], [d, e, f], [g, h, i]]).reshape(3, 3)
+        j = 0
+        k = 0
+        l = 1
+        return np.array([[ a,  b, c], [d, e, f], [g, h, i], [j, k, l]]).reshape(4, 3)
 
     def kalman_gain(self, H, R):   
         return self.P_apriori @ np.transpose(H) @ np.linalg.inv(H @ self.P_apriori @ np.transpose(H) + R)
@@ -190,9 +193,9 @@ class EKF_withOrientation():
         h_r = np.sqrt((x_k - x_beacon)**2 + (y_beacon - y_k)**2 + self.altitude**2) # we consider z_beacon=0
         h_b = np.arctan2((y_beacon - y_k), (x_beacon - x_k))
         h_e = np.arctan2(-self.altitude, (np.sqrt((x_beacon - x_k)**2 + (y_beacon - y_k)**2)))
+        h_yaw = yaw_k
         
-        
-        h = np.array([h_r, h_e, h_b])
+        h = np.array([h_r, h_e, h_b, h_yaw])
         h = np.transpose(h)
         print("h: " + str(h) + "\n")
         print("measures: " + str(measures) + "\n")
@@ -204,3 +207,12 @@ class EKF_withOrientation():
 
         self.current_state[:,0] = self.current_state[:,0] + K@(measures - h)
         self.P_aposteriori = (np.identity(self.state_dimension) - K@H) @ self.P_apriori
+
+    def getCurrent_State(self):
+        return self.current_state
+    def getCurrentAprioriState(self):
+        return self.current_state
+    def getCovariance(self):
+        return self.P_aposteriori
+    def getAprioriCovariance(self):
+        return self.P_apriori
