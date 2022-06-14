@@ -4,7 +4,7 @@ import numpy as np
 from medusa_msgs.msg import mUSBLFix
 from dsor_msgs.msg import Measurement
 from ekf_saut.msg import MsgEKF
-from ekf import EKF_simple
+from ekf import EKF_simple, EKF_withOrientation
 from auv_msgs.msg import NavigationStatus
 import itertools
 
@@ -12,6 +12,7 @@ import itertools
 measures = np.array([-1000, -1000, -1000])
 vel = [0, 0]
 yaw = -1000
+yaw_rate = 0.0
 utm_pos = [4290794.43, 491936.56]
 nav_pos = [-1000, -1000]
 
@@ -32,7 +33,9 @@ def callback_vel(data):
 
 def callback_yaw(data):
     global yaw
+    global yaw_rate
     yaw = data.value[2]
+    yaw_rate = data.value[5]
 
 def callback_nav(data):
     global nav_pos
@@ -41,7 +44,7 @@ def callback_nav(data):
 if __name__ == '__main__':
     rospy.init_node('custom_listener', anonymous=True)
     rate = rospy.Rate(10)
-    state_dim =2 #alterar para ter o yaw
+    state_dim =3 #com o yaw
     measurement_dim = 3
     z = 0.2
     process_mean = 0 
@@ -54,7 +57,7 @@ if __name__ == '__main__':
     y_beacon = 20
     t_step = 0.1
 
-    ekf = EKF_simple(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance, z)
+    ekf = EKF_withOrientation(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance, z)
     rospy.Subscriber("/mvector/measurement/velocity", Measurement, callback_vel)
     rospy.Subscriber("/mvector/measurement/orientation", Measurement, callback_yaw)
     rospy.Subscriber("/mvector/sensors/usbl_fix", mUSBLFix, callback_beacon)
@@ -65,7 +68,7 @@ if __name__ == '__main__':
 
         
     while not rospy.is_shutdown():
-        ekf.predict(vel[0], vel[1], yaw, t_step)
+        ekf.predict(vel[0], vel[1], yaw_rate, yaw, t_step)
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, measures)

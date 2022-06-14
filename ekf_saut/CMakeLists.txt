@@ -20,6 +20,10 @@ catkin_install_python(PROGRAMS sensor_read.py
     DESTINATION $(CATKIN_PACKAGE_BIN_DESTINATION)
 )
 
+catkin_install_python(PROGRAMS sensor_read_yaw.py
+    DESTINATION $(CATKIN_PACKAGE_BIN_DESTINATION)
+)
+
 catkin_python_setup()
 
 add_message_files(
@@ -32,6 +36,7 @@ generate_messages(
   geometry_msgs
   std_msgs
 )
+
 
 
 catkin_package(CATKIN_DEPENDS message_runtime)
