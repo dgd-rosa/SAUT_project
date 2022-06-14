@@ -20,7 +20,7 @@ gt_pos = [-1, -1]
 def callback_beacon (data):
     global measures
     global measurement_flag
-    measures = np.array([data.range, data.elevation, data.bearing])
+    measures = np.array([data.range, data.elevation, data.bearing - np.pi])
     measurement_flag = True
 
 def callback_vel(data):
