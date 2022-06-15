@@ -3,7 +3,7 @@
 
     <!-- Argument to set the -->
     <arg name="name"                  default="mvector" />   <!-- Accepted: myellow, mvector-->
-    <arg name="path_type"             default="lawn_mower" /> <!-- Accepted: bernoulli, lawn_mower -->
+    <arg name="path_type"             default="bernoulli" /> <!-- Accepted: bernoulli, lawn_mower -->
     <arg name="controller_type"       default="romulo" />    <!-- Accepted: aguiar, lapierre, samson, fossen, brevik, romulo, pramod-->
     <arg name="vehicle_speed_profile" default="0.5" />       <!-- Desired speed for the vehicle (in m/s) -->
 

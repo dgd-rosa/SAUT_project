@@ -33,7 +33,10 @@ if __name__ == "__main__":
         pth.spawn_lawn_small(center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
         #pth.spawn_lawn_mower(center_x=utm_north-40, center_y=utm_east-50, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
     elif path_type == 'bernoulli':
-        pth.spawn_bernoulli(radius=30, center_x=utm_north-30.0, center_y=utm_east-30.0, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
+        pth.spawn_bernoulli(radius=7.5, center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
+    elif path_type == 'simple':
+        pth.path_near_beacon(center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
+        #pth.simple_path(center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
     else:
         rospy.WARN('Desired path only supports lawn_mower or bernoulli in this demo!')
         rospy.signal_shutdown('Desired path not supported')

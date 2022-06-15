@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from math import fabs
+from matplotlib.pyplot import flag
 import rospy
 import numpy as np
 from medusa_msgs.msg import mUSBLFix
@@ -14,10 +16,11 @@ vel = [0, 0]
 yaw = -1000
 yaw_rate = 0.0
 utm_pos = [4290794.43, 491936.56]
-nav_pos = [-1000, -1000]
+nav_pos = [-1000, -1000, -1000]
 
 pose_array = []
 nav_array = []
+flag_array = []
 measurement_flag = False
 def callback_beacon (data):
     global measures
@@ -41,10 +44,15 @@ def callback_yaw(data):
 
 def callback_nav(data):
     global nav_pos
-    nav_pos = [data.position.north, data.position.east, data.orientation.z]
+    nav_pos = []
+    nav_pos.append(data.position.north)
+    nav_pos.append(data.position.east)
+    nav_pos.append(data.orientation.z)
 
 def dead_fcn():
-    with open('ekf_saut/medusa_stop.txt', 'w') as f:
+    with open('medusa_stop17_flag.txt', 'w') as f:
+        global pose_array
+        counter = 0
         for pose in pose_array:
             f.write(str(pose.state.x))
             f.write('\t')
@@ -52,14 +60,17 @@ def dead_fcn():
             f.write('\t')
             f.write(str(pose.yaw))
             f.write('\t')
-            f.write(str(nav_pos[0]))
+            f.write(str(nav_array[counter][0]))
             f.write('\t')
-            f.write(str(nav_pos[1]))
+            f.write(str(nav_array[counter][1]))
             f.write('\t')
-            f.write(str(nav_pos[2]))
+            f.write(str(nav_array[counter][2]))
             f.write('\t')
             f.write(str(pose.covariance))
+            f.write('\t')
+            f.write(str(flag_array[counter]))
             f.write('\n')
+            counter = counter + 1
 
 if __name__ == '__main__':
     rospy.init_node('custom_listener', anonymous=True)
@@ -84,20 +95,26 @@ if __name__ == '__main__':
     rospy.Subscriber("/mvector/nav/filter/state", NavigationStatus, callback_nav)
     pub = rospy.Publisher('chatter', MsgEKF, queue_size=1)
 
-    pose = MsgEKF()
+    
 
-        
+    counter = 0
     while not rospy.is_shutdown():
         ekf.predict(vel[0], vel[1], yaw_rate, yaw, t_step)
+        
+        
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, measures)
             print("Current State: " + str(ekf.getCurrent_State()))
             print("A Posteriori: " + str(ekf.getAprioriCovariance()))
             print("********\n")
+            flag_array.append(1)
             measurement_flag = False
+        else:
+            flag_array.append(0)
         
         # NED
+        pose = MsgEKF()
         pose.state.x = ekf.getCurrent_State()[0, 0] + utm_pos[0]
         pose.state.y = ekf.getCurrent_State()[1, 0] + utm_pos[1]
         pose.state.z = 0
@@ -109,8 +126,9 @@ if __name__ == '__main__':
         
         pose_array.append(pose)
         nav_array.append(nav_pos)
-        pub.publish(pose)
 
+        pub.publish(pose)
+        counter = counter +1
 
         rate.sleep()
     rospy.on_shutdown(dead_fcn)
