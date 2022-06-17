@@ -50,7 +50,7 @@ def callback_nav(data):
     nav_pos.append(data.orientation.z)
 
 def dead_fcn():
-    with open('medusa_stop17_flag.txt', 'w') as f:
+    with open('simple3.txt', 'w') as f:
         global pose_array
         counter = 0
         for pose in pose_array:
@@ -95,18 +95,12 @@ if __name__ == '__main__':
     rospy.Subscriber("/mvector/nav/filter/state", NavigationStatus, callback_nav)
     pub = rospy.Publisher('chatter', MsgEKF, queue_size=1)
 
-    
-
-    counter = 0
     while not rospy.is_shutdown():
         ekf.predict(vel[0], vel[1], yaw_rate, yaw, t_step)
-        
-        
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, measures)
             print("Current State: " + str(ekf.getCurrent_State()))
-            print("A Posteriori: " + str(ekf.getAprioriCovariance()))
             print("********\n")
             flag_array.append(1)
             measurement_flag = False
@@ -119,6 +113,7 @@ if __name__ == '__main__':
         pose.state.y = ekf.getCurrent_State()[1, 0] + utm_pos[1]
         pose.state.z = 0
         pose.yaw = np.degrees(ekf.getCurrent_State()[2,0])
+        
         cov = ekf.getCovariance().tolist()
         pose.covariance = list( itertools.chain.from_iterable( cov ))
     
@@ -128,7 +123,6 @@ if __name__ == '__main__':
         nav_array.append(nav_pos)
 
         pub.publish(pose)
-        counter = counter +1
 
         rate.sleep()
     rospy.on_shutdown(dead_fcn)

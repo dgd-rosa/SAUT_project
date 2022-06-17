@@ -129,8 +129,8 @@ class EKF_withOrientation():
         self.measurement_mean = measurement_mean
         self.measurement_variance = measurement_variance
 
-        self.P_apriori = np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2)
-        self.P_aposteriori = (np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
+        self.P = np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2)
+        #self.P_aposteriori = (np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
 
     def A_matrix(self, u, v, yaw, t_step):
         A = np.identity(self.state_dimension)
@@ -152,7 +152,7 @@ class EKF_withOrientation():
 
         # Compute the a priori error covariance estimate
         A = self.A_matrix(u, v, psi, t_step)
-        self.P_apriori = (A @ self.P_aposteriori @ np.transpose(A)) + self.Q_matrix()
+        self.P = (A @ self.P @ np.transpose(A)) + self.Q_matrix()
 
     def H_matrix(self, x_beacon, y_beacon):
         x = self.current_state[0,0]
@@ -178,7 +178,7 @@ class EKF_withOrientation():
         return np.array([[ a,  b, c], [d, e, f], [g, h, i], [j, k, l]]).reshape(4, 3)
 
     def kalman_gain(self, H, R):   
-        return self.P_apriori @ np.transpose(H) @ np.linalg.inv(H @ self.P_apriori @ np.transpose(H) + R)
+        return self.P @ np.transpose(H) @ np.linalg.inv(H @ self.P @ np.transpose(H) + R)
 
     # measures = [RANGE, ELEVATION, BEARING]
     def update(self, x_beacon, y_beacon, measures):
@@ -187,7 +187,6 @@ class EKF_withOrientation():
         yaw_k = self.current_state[2, 0]
         print("Antes do update:")
         print("Current State: " + str(self.getCurrent_State()))
-        print("A Posteriori: " + str(self.P_aposteriori))
         print("*********")
 
         h_r = np.sqrt((x_k - x_beacon)**2 + (y_beacon - y_k)**2 + self.altitude**2) # we consider z_beacon=0
@@ -206,13 +205,9 @@ class EKF_withOrientation():
         print("K(y-h): " + str(K@(measures - h)) + "\n" )
 
         self.current_state[:,0] = self.current_state[:,0] + K@(measures - h)
-        self.P_aposteriori = (np.identity(self.state_dimension) - K@H) @ self.P_apriori
+        self.P = (np.identity(self.state_dimension) - K@H) @ self.P
 
     def getCurrent_State(self):
         return self.current_state
-    def getCurrentAprioriState(self):
-        return self.current_state
     def getCovariance(self):
-        return self.P_aposteriori
-    def getAprioriCovariance(self):
-        return self.P_apriori
+        return self.P
