@@ -50,7 +50,7 @@ def callback_nav(data):
     nav_pos.append(data.orientation.z)
 
 def dead_fcn():
-    with open('simple3.txt', 'w') as f:
+    with open('simple_only_predict.txt', 'w') as f:
         global pose_array
         counter = 0
         for pose in pose_array:
@@ -100,13 +100,16 @@ if __name__ == '__main__':
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, measures)
-            print("Current State: " + str(ekf.getCurrent_State()))
-            print("********\n")
+            
             flag_array.append(1)
             measurement_flag = False
         else:
             flag_array.append(0)
-        
+        print("Current State: " + str(ekf.getCurrent_State()))
+        print("********\n")
+        print("Covariance: " + str(ekf.getCovariance()))
+        print("********\n")
+
         # NED
         pose = MsgEKF()
         pose.state.x = ekf.getCurrent_State()[0, 0] + utm_pos[0]

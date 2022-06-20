@@ -123,6 +123,7 @@ class EKF_withOrientation():
         self.measurement_dimension = measurement_dimension
         self.altitude = altitude # it is always constant
         self.current_state = np.zeros((state_dimension, 1))
+        #self.current_state[2] = np.pi/2
 
         self.process_mean = process_mean
         self.process_variance = process_variance
