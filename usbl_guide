@@ -13,7 +13,9 @@ rostopic pub /USBL/enable_pinger std_msgs/Bool "data: true" (começar a mandar e
 rostopic echo /mvector/sensors/usbl_fix (topico onde se tem o bearing, elevation e range do beacon em relação ao mvector)
 
 
-
+rosservice call /mvector/controls/send_wp_heading "x: 4290794.432789664
+y: 491936.59943715617
+yaw: 90.0"
 
 ground truth - /mvector/State_gt
 gazebo coordinates - /gazebo/model_states

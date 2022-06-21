@@ -123,6 +123,7 @@ class EKF_withOrientation():
         self.measurement_dimension = measurement_dimension
         self.altitude = altitude # it is always constant
         self.current_state = np.zeros((state_dimension, 1))
+        self.dead_reckoning = np.zeros((2, 1))
         #self.current_state[2] = np.pi/2
 
         self.process_mean = process_mean
@@ -150,7 +151,8 @@ class EKF_withOrientation():
         self.current_state[0, 0] = self.current_state[0, 0] + u*t_step*np.cos(psi) - v*t_step*np.sin(psi)
         self.current_state[1, 0] = self.current_state[1, 0] + u*t_step*np.sin(psi) + v*t_step*np.cos(psi)
         self.current_state[2, 0] = self.current_state[2, 0] + t_step*r
-
+        self.dead_reckoning[0, 0] = self.dead_reckoning[0, 0] + u*t_step*np.cos(psi) - v*t_step*np.sin(psi)
+        self.dead_reckoning[1, 0] = self.dead_reckoning[1, 0] + u*t_step*np.cos(psi) - v*t_step*np.sin(psi)
         # Compute the a priori error covariance estimate
         A = self.A_matrix(u, v, psi, t_step)
         self.P = (A @ self.P @ np.transpose(A)) + self.Q_matrix()
@@ -165,8 +167,8 @@ class EKF_withOrientation():
         b = ( (y - y_beacon) / aux_sqrt)
         c = 0
         #Elevation derivatives
-        d = -((self.altitude * (x - x_beacon)) / ( np.sqrt((x - x_beacon)**2 + (y_beacon - y)**2) * ( (x - x_beacon)**2 + (y_beacon - y)**2 + self.altitude**2 ) )) # Actually it is - (-self.altitude * x_inv) / ( np.sqrt(x_inv**2 + y_inv**2) * ( x_inv**2 + y_inv**2 + c**2 - 2*z_beaco*z + z**2 ) ) But the ship is always at z=0
-        e = -((self.altitude * (x - x_beacon)) / ( np.sqrt((x - x_beacon)**2 + (y_beacon - y)**2) * ( (x - x_beacon)**2 + (y_beacon - y)**2 + self.altitude**2 ) )) # Same here
+        d = -(self.altitude * (x_beacon - x)) / ( ((x_beacon - x)**2 + (y_beacon - y)**2 + self.altitude**2)**(3.0/2.0) * np.sqrt( 1 - (self.altitude**2 / ( (x_beacon - x)**2 + (y_beacon - y)**2 + self.altitude**2 )) ) )
+        e = (-self.altitude * (y_beacon - y)) / ( ((x_beacon - x)**2 + (y_beacon - y)**2 + self.altitude**2)**(3.0/2.0) * np.sqrt( 1 - (self.altitude**2 / ( (x_beacon - x)**2 + (y_beacon - y)**2 + self.altitude**2 )) ) )
         f = 0
         #Bearing derivatives
         g = ( (y_beacon - y) / ((x - x_beacon)**2 + (y_beacon - y)**2))
@@ -192,7 +194,7 @@ class EKF_withOrientation():
 
         h_r = np.sqrt((x_k - x_beacon)**2 + (y_beacon - y_k)**2 + self.altitude**2) # we consider z_beacon=0
         h_b = np.arctan2((y_beacon - y_k), (x_beacon - x_k))
-        h_e = np.arctan2(-self.altitude, (np.sqrt((x_beacon - x_k)**2 + (y_beacon - y_k)**2)))
+        h_e = np.arcsin(-self.altitude / (np.sqrt((x_beacon - x_k)**2 + (y_beacon - y_k)**2 + self.altitude*2)))
         h_yaw = yaw_k
         
         h = np.array([h_r, h_e, h_b, h_yaw])
@@ -212,3 +214,5 @@ class EKF_withOrientation():
         return self.current_state
     def getCovariance(self):
         return self.P
+    def getDeadReckoning(self):
+        return self.dead_reckoning

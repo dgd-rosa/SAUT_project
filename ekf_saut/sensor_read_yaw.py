@@ -22,6 +22,7 @@ pose_array = []
 nav_array = []
 flag_array = []
 measurement_flag = False
+dead_reck_array = []
 def callback_beacon (data):
     global measures
     global measurement_flag
@@ -50,7 +51,7 @@ def callback_nav(data):
     nav_pos.append(data.orientation.z)
 
 def dead_fcn():
-    with open('simple_only_predict.txt', 'w') as f:
+    with open('simple_depth0.txt', 'w') as f:
         global pose_array
         counter = 0
         for pose in pose_array:
@@ -66,6 +67,10 @@ def dead_fcn():
             f.write('\t')
             f.write(str(nav_array[counter][2]))
             f.write('\t')
+            f.write(str(dead_reck_array[counter][0] + utm_pos[0]))
+            f.write('\t')
+            f.write(str(dead_reck_array[counter][1]+ utm_pos[1]))
+            f.write('\t')
             f.write(str(pose.covariance))
             f.write('\t')
             f.write(str(flag_array[counter]))
@@ -77,10 +82,10 @@ if __name__ == '__main__':
     rate = rospy.Rate(10)
     state_dim =3 #com o yaw
     measurement_dim = 4 #com yaw
-    z = 0.2
+    z = 1.5
     process_mean = 0 
-    process_variance = 0.1
-    measurement_variance = 0.01
+    process_variance = 0.01
+    measurement_variance = 0.2
     measurement_mean = 0
     #em NED, ENU = (-20, 30)
     #TODO: Recheck this conversion
@@ -124,6 +129,9 @@ if __name__ == '__main__':
         
         pose_array.append(pose)
         nav_array.append(nav_pos)
+        dead_reck = ekf.getDeadReckoning() 
+        dead_reck = list(itertools.chain.from_iterable( dead_reck ))
+        dead_reck_array.append(dead_reck)
 
         pub.publish(pose)
 
