@@ -51,7 +51,7 @@ def callback_nav(data):
     nav_pos.append(data.orientation.z)
 
 def dead_fcn():
-    with open('simple_depth0.txt', 'w') as f:
+    with open('data_files/lawn_mower/lawn_mower10.txt', 'w') as f:
         global pose_array
         counter = 0
         for pose in pose_array:
@@ -71,6 +71,8 @@ def dead_fcn():
             f.write('\t')
             f.write(str(dead_reck_array[counter][1]+ utm_pos[1]))
             f.write('\t')
+            f.write(str(np.degrees(dead_reck_array[counter][2])))
+            f.write('\t')
             f.write(str(pose.covariance))
             f.write('\t')
             f.write(str(flag_array[counter]))
@@ -87,8 +89,7 @@ if __name__ == '__main__':
     process_variance = 0.01
     measurement_variance = 0.2
     measurement_mean = 0
-    #em NED, ENU = (-20, 30)
-    #TODO: Recheck this conversion
+    
     x_beacon = 40
     y_beacon = 20
     t_step = 0.1
@@ -102,6 +103,7 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         ekf.predict(vel[0], vel[1], yaw_rate, yaw, t_step)
+
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, measures)

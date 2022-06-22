@@ -123,8 +123,9 @@ class EKF_withOrientation():
         self.measurement_dimension = measurement_dimension
         self.altitude = altitude # it is always constant
         self.current_state = np.zeros((state_dimension, 1))
-        self.dead_reckoning = np.zeros((2, 1))
-        #self.current_state[2] = np.pi/2
+        self.current_state[2] = np.pi/2.0
+        self.dead_reckoning = np.zeros((state_dimension, 1))
+        self.dead_reckoning[2] = np.pi/2.0
 
         self.process_mean = process_mean
         self.process_variance = process_variance
@@ -132,7 +133,6 @@ class EKF_withOrientation():
         self.measurement_variance = measurement_variance
 
         self.P = np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2)
-        #self.P_aposteriori = (np.identity(self.state_dimension) * ((random.gauss(self.process_mean, self.process_variance))**2))
 
     def A_matrix(self, u, v, yaw, t_step):
         A = np.identity(self.state_dimension)
@@ -152,7 +152,9 @@ class EKF_withOrientation():
         self.current_state[1, 0] = self.current_state[1, 0] + u*t_step*np.sin(psi) + v*t_step*np.cos(psi)
         self.current_state[2, 0] = self.current_state[2, 0] + t_step*r
         self.dead_reckoning[0, 0] = self.dead_reckoning[0, 0] + u*t_step*np.cos(psi) - v*t_step*np.sin(psi)
-        self.dead_reckoning[1, 0] = self.dead_reckoning[1, 0] + u*t_step*np.cos(psi) - v*t_step*np.sin(psi)
+        self.dead_reckoning[1, 0] = self.dead_reckoning[1, 0] + u*t_step*np.sin(psi) + v*t_step*np.cos(psi)
+        self.dead_reckoning[2, 0] = self.dead_reckoning[2, 0] + t_step*r
+        
         # Compute the a priori error covariance estimate
         A = self.A_matrix(u, v, psi, t_step)
         self.P = (A @ self.P @ np.transpose(A)) + self.Q_matrix()
