@@ -163,11 +163,19 @@ def simple_path(center_x: float, center_y: float, z: float, vehicle_name: str, s
 
     spawn_line([center_x-5, center_y-10, z], [center_x+5, center_y-10, z], [0.0, 0.0, 0.0], vehicle_name, speed)
 
+    spawn_arc([center_x+5, center_y-10], [center_x+5, center_y-15], [center_x+5, center_y-12.5], 1, z, vehicle_name, speed)
+
+    spawn_line([center_x+5, center_y-15, z], [center_x, center_y-15, z], [0.0, 0.0, 0.0], vehicle_name, speed)
+
 def path_near_beacon(center_x: float, center_y: float, z: float, vehicle_name: str, speed: float):
 
     spawn_line([center_x, center_y, z], [center_x, center_y+15, z], [0.0, 0.0, 0.0], vehicle_name, speed)
 
     spawn_arc([center_x, center_y+15], [center_x+10, center_y+15], [center_x+5, center_y+15], 1, z, vehicle_name, speed)
+
+    spawn_line([center_x+10, center_y+15, z], [center_x, center_y, z], [0.0, 0.0, 0.0], vehicle_name, speed)
+
+
 
 def path_big(center_x: float, center_y: float, z: float, vehicle_name: str, speed: float):
 
@@ -180,3 +188,7 @@ def path_big(center_x: float, center_y: float, z: float, vehicle_name: str, spee
     spawn_arc([center_x, center_y-10], [center_x, center_y-20], [center_x, center_y-15], -1, z, vehicle_name, speed)
 
     spawn_line([center_x, center_y-20, z], [center_x+50, center_y-20, z], [0.0, 0.0, 0.0], vehicle_name, speed)
+
+    spawn_arc([center_x+50, center_y-20], [center_x+50, center_y-30], [center_x+50, center_y-25], 1, z, vehicle_name, speed)
+
+    spawn_line([center_x+50, center_y-30, z], [center_x, center_y-30, z], [0.0, 0.0, 0.0], vehicle_name, speed)

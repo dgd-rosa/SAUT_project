@@ -39,6 +39,8 @@ if __name__ == "__main__":
         pth.simple_path(center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
     elif path_type == 'big':
         pth.path_big(center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
+    elif path_type == 'circle':
+        pth.path_circle(center_x=utm_north, center_y=utm_east, z=0.0, vehicle_name=vehicle_name, speed=vehicle_speed)
     else:
         rospy.WARN('Desired path only supports lawn_mower or bernoulli in this demo!')
         rospy.signal_shutdown('Desired path not supported')

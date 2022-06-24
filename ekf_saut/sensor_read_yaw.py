@@ -23,12 +23,20 @@ nav_array = []
 flag_array = []
 measurement_flag = False
 dead_reck_array = []
+
+comms_fail_time = 80
+comms_counter = 0
 def callback_beacon (data):
     global measures
     global measurement_flag
     global yaw
+    global comms_counter
     measures = np.array([data.range, data.elevation, data.bearing - np.pi, yaw])
-    measurement_flag = True
+    if comms_counter < comms_fail_time:
+        comms_counter = comms_counter + 1
+        measurement_flag = False
+    else:
+        measurement_flag = True
 
 def callback_vel(data):
     u = data.value[0]
@@ -51,7 +59,7 @@ def callback_nav(data):
     nav_pos.append(data.orientation.z)
 
 def dead_fcn():
-    with open('data_files/lawn_mower/lawn_mower10.txt', 'w') as f:
+    with open('data_files/comms_ruido.txt', 'w') as f:
         global pose_array
         counter = 0
         for pose in pose_array:
@@ -90,8 +98,10 @@ if __name__ == '__main__':
     measurement_variance = 0.2
     measurement_mean = 0
     
-    x_beacon = 40
-    y_beacon = 20
+    # x_beacon = 90.0
+    # y_beacon = -120.0
+    x_beacon = 40.0
+    y_beacon = 20.0
     t_step = 0.1
 
     ekf = EKF_withOrientation(state_dim, measurement_dim, process_mean, process_variance, measurement_mean, measurement_variance, z)
@@ -107,11 +117,11 @@ if __name__ == '__main__':
         #Update when there is new measurements
         if measurement_flag:
             ekf.update(x_beacon, y_beacon, measures)
-            
             flag_array.append(1)
             measurement_flag = False
         else:
             flag_array.append(0)
+        
         print("Current State: " + str(ekf.getCurrent_State()))
         print("********\n")
         print("Covariance: " + str(ekf.getCovariance()))
